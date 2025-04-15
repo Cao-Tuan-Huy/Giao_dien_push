@@ -94,8 +94,14 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
     <Row
       className="position-relative w-100 h-100"
       draggable
+      onMouseDown={(e) => {
+        // Chặn sự kiện kéo thả nếu nhấn vào dropdown
+        if ((e.target as HTMLElement).closest(".dropdown-toggle, .dropdown-item")) {
+          e.stopPropagation();
+        }
+      }}
       onDragStart={(e) => {
-        if ((e.target as HTMLElement).closest("button, input, .dropdown-toggle, .tag-icon")) {
+        if ((e.target as HTMLElement).closest("button, input, .dropdown-toggle, .dropdown-item, .tag-icon")) {
           e.preventDefault();
           return;
         }
@@ -148,8 +154,8 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
           <button
             type="button"
             className={`form-control border border-1 shadow-lg btn btn-info text-black text-center rounded px-1 my-1 h-100 ${effectActive}`}
-            onMouseDown={handleClickChangeTagCondition} // Thay onClick thành onMouseDown
-            onTouchStart={handleClickChangeTagCondition} // Hỗ trợ cảm ứng
+            onMouseDown={handleClickChangeTagCondition}
+            onTouchStart={handleClickChangeTagCondition}
             draggable={false}
             style={{ cursor: "pointer", zIndex: 10 }}
           >
@@ -187,29 +193,38 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
 
       {isNumberValue && (
         <Col xs={3} lg={2} className="ps-0 h-100">
-          <Dropdown className="h-100">
+          <Dropdown className="h-100" style={{ position: "relative", zIndex: 1000 + index * 10 }}>
             <Dropdown.Toggle
               variant="outline-secondary"
-              className={`w-100 h-100 border border-1 shadow-lg rounded px-3 my-1 ${effectActive}`}
-              onMouseDown={(e) => e.preventDefault()} // Ngăn kéo thả
-              onTouchStart={(e) => e.preventDefault()} // Hỗ trợ cảm ứng
+              className={`w-100 h-100 border border-1 shadow-lg rounded px-3 py-2 my-1 ${effectActive}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                console.log(`Dropdown toggle clicked for ${item.tag} (id: ${item.id})`);
+              }}
+              onTouchStart={(e) => {
+                e.preventDefault();
+                console.log(`Dropdown toggle touched for ${item.tag} (id: ${item.id})`);
+              }}
               draggable={false}
-              style={{ cursor: "pointer", zIndex: 10 }}
+              style={{ cursor: "pointer", zIndex: 1000 + index * 10, padding: "0.75rem 0.5rem", pointerEvents: "auto" }}
             >
-              {item.unit || ""}
+              {item.unit || "Chọn đơn vị"}
             </Dropdown.Toggle>
-            <Dropdown.Menu>
+            <Dropdown.Menu style={{ zIndex: 1001 + index * 10, minWidth: "100%", marginTop: "2px" }}>
               {["Gram", "Megapixel", "Core", "Centimet", "$", "VND", "USD"].map((unit) => (
                 <Dropdown.Item
                   key={unit}
                   onMouseDown={(e) => {
                     e.preventDefault();
                     handleUnitChange(unit);
+                    console.log(`Selected unit ${unit} for ${item.tag} (id: ${item.id})`);
                   }}
                   onTouchStart={(e) => {
                     e.preventDefault();
                     handleUnitChange(unit);
+                    console.log(`Touched unit ${unit} for ${item.tag} (id: ${item.id})`);
                   }}
+                  style={{ cursor: "pointer", padding: "0.5rem 1rem" }}
                 >
                   {unit}
                 </Dropdown.Item>
