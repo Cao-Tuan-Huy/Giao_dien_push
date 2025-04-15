@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { Form, Button, Dropdown, Row, Col } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa";
 import { ResizableBox } from "react-resizable";
@@ -44,24 +44,6 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
   const [isEditingTag, setIsEditingTag] = useState(false);
   const [isEditingValue, setIsEditingValue] = useState(false);
   const valueTagIsNumber = !isNaN(Number(item.value)) && item.value;
-  const valueRef = useRef<HTMLDivElement>(null);
-
-  // Tính toán chiều cao cần thiết dựa trên nội dung
-  useEffect(() => {
-    if (valueRef.current && !isEditingValue && typeof item.value === "string") {
-      const lineHeight = 20;
-      const padding = 6;
-      const contentHeight = valueRef.current.scrollHeight;
-      const requiredLines = Math.ceil((contentHeight - padding * 2) / lineHeight);
-      const newHeight = Math.max(2, requiredLines);
-      if (newHeight !== item.layout.h) {
-        updateItem(item.id, {
-          ...item,
-          layout: { ...item.layout, h: newHeight },
-        });
-      }
-    }
-  }, [item.value, isEditingValue, item.id]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -199,13 +181,11 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
           />
         ) : (
           <div
-            ref={valueRef}
             className={`form-control border border-1 shadow-lg px-3 my-1 h-100 ${effectActive}`}
             onMouseDown={handleEditValue}
             style={{
               cursor: "pointer",
               zIndex: 10,
-              overflow: "hidden",
               whiteSpace: "normal",
               wordWrap: "break-word",
             }}
@@ -402,7 +382,6 @@ const PhoneCard: React.FC = () => {
     if (data === "image" && containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      // Chia container thành hai nửa để xác định vị trí ảnh
       setImagePosition(x < rect.width / 2 ? "left" : "right");
     }
   };
