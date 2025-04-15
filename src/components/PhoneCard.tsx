@@ -49,11 +49,11 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
   // Tính toán chiều cao cần thiết dựa trên nội dung
   useEffect(() => {
     if (valueRef.current && !isEditingValue && typeof item.value === "string") {
-      const lineHeight = 20; // Ước lượng chiều cao mỗi dòng (px)
-      const padding = 6; // Padding trên/dưới của div
+      const lineHeight = 20;
+      const padding = 6;
       const contentHeight = valueRef.current.scrollHeight;
       const requiredLines = Math.ceil((contentHeight - padding * 2) / lineHeight);
-      const newHeight = Math.max(2, requiredLines); // Đảm bảo tối thiểu h=2
+      const newHeight = Math.max(2, requiredLines);
       if (newHeight !== item.layout.h) {
         updateItem(item.id, {
           ...item,
@@ -61,7 +61,7 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
         });
       }
     }
-  }, [item.value, isEditingValue, item.id]); // Chỉ chạy khi item.value hoặc isEditingValue thay đổi
+  }, [item.value, isEditingValue, item.id]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -264,8 +264,9 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
 // Component chính
 const PhoneCard: React.FC = () => {
   const [title, setTitle] = useState("Điện thoại HiSense A6L");
-  const [image, setImage] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState({ width: 200, height: 300 });
+  const [imagePosition, setImagePosition] = useState<"left" | "right">("left");
+  const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<TagValue[]>([
     {
       id: 1,
@@ -337,14 +338,6 @@ const PhoneCard: React.FC = () => {
     },
   ]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setImage(imageUrl);
-    }
-  };
-
   const addItem = () => {
     const newItem: TagValue = {
       id: items.length + 1,
@@ -399,8 +392,32 @@ const PhoneCard: React.FC = () => {
     setImageSize({ width: size.width, height: size.height });
   };
 
+  const handleImageDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData("image", "image");
+  };
+
+  const handleImageDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData("image");
+    if (data === "image" && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      // Chia container thành hai nửa để xác định vị trí ảnh
+      setImagePosition(x < rect.width / 2 ? "left" : "right");
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className="container mt-4 border rounded p-3 bg-light">
+    <div
+      className="container mt-4 border rounded p-3 bg-light"
+      ref={containerRef}
+      onDrop={handleImageDrop}
+      onDragOver={handleDragOver}
+    >
       <Form.Control
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -409,56 +426,113 @@ const PhoneCard: React.FC = () => {
       />
 
       <Row>
-        <Col md={4} className="mb-3">
-          <Form.Group controlId="formFile" className="mb-3">
-            <Form.Control type="file" onChange={handleImageUpload} />
-          </Form.Group>
-          {image && (
-            <ResizableBox
-              width={imageSize.width}
-              height={imageSize.height}
-              onResize={handleImageResize}
-              minConstraints={[100, 150]}
-              maxConstraints={[400, 600]}
-            >
-              <img
-                src={image}
-                alt="Phone"
-                className="img-fluid rounded"
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            </ResizableBox>
-          )}
-        </Col>
-
-        <Col md={8}>
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={{ lg: items.map((item) => item.layout) }}
-            breakpoints={{ lg: 992, md: 768, sm: 576, xs: 0 }}
-            cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
-            rowHeight={20}
-            width={600}
-            onLayoutChange={handleLayoutChange}
-            isResizable={true}
-            isDraggable={true}
-          >
-            {items.map((item, index) => (
-              <div key={item.layout.i}>
-                <TagValueItem
-                  item={item}
-                  updateItem={updateItem}
-                  removeItem={removeItem}
-                  handleDrop={handleDrop}
-                  index={index}
-                />
-              </div>
-            ))}
-          </ResponsiveGridLayout>
-          <Button variant="primary" size="sm" onClick={addItem} className="mt-2">
-            <FaPlus /> Thêm
-          </Button>
-        </Col>
+        {imagePosition === "left" ? (
+          <>
+            <Col md={4} className="mb-3">
+              <ResizableBox
+                width={imageSize.width}
+                height={imageSize.height}
+                onResize={handleImageResize}
+                minConstraints={[100, 150]}
+                maxConstraints={[400, 600]}
+              >
+                <div
+                  draggable
+                  onDragStart={handleImageDragStart}
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <img
+                    src="img/anh1.jpg"
+                    alt="Phone"
+                    className="img-fluid rounded"
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+              </ResizableBox>
+            </Col>
+            <Col md={8}>
+              <ResponsiveGridLayout
+                className="layout"
+                layouts={{ lg: items.map((item) => item.layout) }}
+                breakpoints={{ lg: 992, md: 768, sm: 576, xs: 0 }}
+                cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
+                rowHeight={20}
+                width={600}
+                onLayoutChange={handleLayoutChange}
+                isResizable={true}
+                isDraggable={true}
+              >
+                {items.map((item, index) => (
+                  <div key={item.layout.i}>
+                    <TagValueItem
+                      item={item}
+                      updateItem={updateItem}
+                      removeItem={removeItem}
+                      handleDrop={handleDrop}
+                      index={index}
+                    />
+                  </div>
+                ))}
+              </ResponsiveGridLayout>
+              <Button variant="primary" size="sm" onClick={addItem} className="mt-2">
+                <FaPlus /> Thêm
+              </Button>
+            </Col>
+          </>
+        ) : (
+          <>
+            <Col md={8}>
+              <ResponsiveGridLayout
+                className="layout"
+                layouts={{ lg: items.map((item) => item.layout) }}
+                breakpoints={{ lg: 992, md: 768, sm: 576, xs: 0 }}
+                cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
+                rowHeight={20}
+                width={600}
+                onLayoutChange={handleLayoutChange}
+                isResizable={true}
+                isDraggable={true}
+              >
+                {items.map((item, index) => (
+                  <div key={item.layout.i}>
+                    <TagValueItem
+                      item={item}
+                      updateItem={updateItem}
+                      removeItem={removeItem}
+                      handleDrop={handleDrop}
+                      index={index}
+                    />
+                  </div>
+                ))}
+              </ResponsiveGridLayout>
+              <Button variant="primary" size="sm" onClick={addItem} className="mt-2">
+                <FaPlus /> Thêm
+              </Button>
+            </Col>
+            <Col md={4} className="mb-3">
+              <ResizableBox
+                width={imageSize.width}
+                height={imageSize.height}
+                onResize={handleImageResize}
+                minConstraints={[100, 150]}
+                maxConstraints={[400, 600]}
+              >
+                <div
+                  draggable
+                  onDragStart={handleImageDragStart}
+                  style={{ width: "100%", height: "100%" }}
+                >
+                  <img
+                    src="img/anh1.jpg"
+                    alt="Phone"
+                    className="img-fluid rounded"
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                </div>
+              </ResizableBox>
+            </Col>
+          </>
+        )}
       </Row>
     </div>
   );
