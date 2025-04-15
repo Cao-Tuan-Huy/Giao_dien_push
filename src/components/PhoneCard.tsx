@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Form, Button, Dropdown, Row, Col } from "react-bootstrap";
 import { FaPlus } from "react-icons/fa";
 import { ResizableBox } from "react-resizable";
@@ -44,6 +44,24 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
   const [isEditingTag, setIsEditingTag] = useState(false);
   const [isEditingValue, setIsEditingValue] = useState(false);
   const valueTagIsNumber = !isNaN(Number(item.value)) && item.value;
+  const valueRef = useRef<HTMLDivElement>(null);
+
+  // Tính toán chiều cao cần thiết dựa trên nội dung
+  useEffect(() => {
+    if (valueRef.current && !isEditingValue) {
+      const lineHeight = 20; // Ước lượng chiều cao mỗi dòng (px)
+      const padding = 6; // Padding trên/dưới của div (ước lượng từ my-1 và px-3)
+      const contentHeight = valueRef.current.scrollHeight;
+      const requiredLines = Math.ceil((contentHeight - padding * 2) / lineHeight);
+      const newHeight = Math.max(2, requiredLines); // Đảm bảo tối thiểu h=2
+      if (newHeight !== item.layout.h) {
+        updateItem(item.id, {
+          ...item,
+          layout: { ...item.layout, h: newHeight },
+        });
+      }
+    }
+  }, [item.value, isEditingValue, item.id, item.layout.h, updateItem]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
@@ -95,7 +113,6 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
       className="position-relative w-100 h-100"
       draggable
       onMouseDown={(e) => {
-        // Chặn sự kiện kéo thả nếu nhấn vào dropdown
         if ((e.target as HTMLElement).closest(".dropdown-toggle, .dropdown-item")) {
           e.stopPropagation();
         }
@@ -182,9 +199,16 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
           />
         ) : (
           <div
+            ref={valueRef}
             className={`form-control border border-1 shadow-lg px-3 my-1 h-100 ${effectActive}`}
             onMouseDown={handleEditValue}
-            style={{ cursor: "pointer", zIndex: 10 }}
+            style={{
+              cursor: "pointer",
+              zIndex: 10,
+              overflow: "hidden",
+              whiteSpace: "normal",
+              wordWrap: "break-word",
+            }}
           >
             {item.value}
           </div>
@@ -255,7 +279,7 @@ const PhoneCard: React.FC = () => {
     {
       id: 2,
       tag: "Tính năng",
-      value: "Độc đáo, Bảo vệ mắt, 2 màn hình, sắc nét",
+      value: "Độc đáo, Bảo vệ mắt, 2 màn hình, sắc nét, công nghệ tiên tiến, hiệu suất cao",
       active: true,
       condition: 0,
       valueType: "string",
@@ -413,7 +437,7 @@ const PhoneCard: React.FC = () => {
             layouts={{ lg: items.map((item) => item.layout) }}
             breakpoints={{ lg: 992, md: 768, sm: 576, xs: 0 }}
             cols={{ lg: 12, md: 8, sm: 6, xs: 4 }}
-            rowHeight={40}
+            rowHeight={20}
             width={600}
             onLayoutChange={handleLayoutChange}
             isResizable={true}
