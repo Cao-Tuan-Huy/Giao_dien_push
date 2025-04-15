@@ -48,9 +48,9 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
 
   // Tính toán chiều cao cần thiết dựa trên nội dung
   useEffect(() => {
-    if (valueRef.current && !isEditingValue) {
+    if (valueRef.current && !isEditingValue && typeof item.value === "string") {
       const lineHeight = 20; // Ước lượng chiều cao mỗi dòng (px)
-      const padding = 6; // Padding trên/dưới của div (ước lượng từ my-1 và px-3)
+      const padding = 6; // Padding trên/dưới của div
       const contentHeight = valueRef.current.scrollHeight;
       const requiredLines = Math.ceil((contentHeight - padding * 2) / lineHeight);
       const newHeight = Math.max(2, requiredLines); // Đảm bảo tối thiểu h=2
@@ -61,7 +61,7 @@ const TagValueItem: React.FC<TagValueItemProps> = ({
         });
       }
     }
-  }, [item.value, isEditingValue, item.id, item.layout.h, updateItem]);
+  }, [item.value, isEditingValue, item.id]); // Chỉ chạy khi item.value hoặc isEditingValue thay đổi
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
